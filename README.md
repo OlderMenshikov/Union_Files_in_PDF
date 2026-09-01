@@ -95,3 +95,6 @@ Proporcjonalne skalowanie obrazów do formatu A4
 Automatyczne generowanie interaktywnego spisu treści z kropkami
 Klikalne odnośniki do stron oraz zakładki boczne (outline)
 Wygodna zmiana kolejności i usuwanie wybranych plików
+
+
+#PDF
