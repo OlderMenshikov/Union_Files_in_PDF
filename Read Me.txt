@@ -1,0 +1,97 @@
+EN
+
+To launch the program, open the file with the .bat extension
+
+About the Program:
+
+Merging PDF documents and images (PNG, JPG, BMP)
+Enabling and disabling the table of contents
+Proportional scaling of images to A4 format
+Automatic generation of an interactive table of contents with dot leaders
+Clickable links to pages and sidebar bookmarks (outline)
+Easy reordering and deletion of selected files
+
+
+
+RU
+
+Для Запуска открыть файл с расширением bat
+
+О Программе:
+
+Объединение PDF документов и картинок (PNG, JPG, BMP)
+Включение и выключение оглавления
+Пропорциональное масштабирование картинок под формат A4
+Автоматическая генерация интерактивного оглавления с точками
+Кликабельные ссылки на страницы и боковые закладки (outline)
+Удобное изменение порядка и удаление выбранных файлов
+
+
+UA
+
+Для запуску відкрийте файл із розширенням bat
+
+Про програму:
+
+Об’єднання PDF-документів і зображень (PNG, JPG, BMP)
+Увімкнення та вимкнення змісту
+Пропорційне масштабування зображень під формат A4
+Автоматичне створення інтерактивного змісту з крапками
+Клікабельні посилання на сторінки та бічні закладки (outline)
+Зручна зміна порядку та видалення вибраних файлів
+
+
+DE
+
+Zum Starten öffnen Sie die Datei mit der Erweiterung bat
+
+Über das Programm:
+
+Zusammenführen von PDF-Dokumenten und Bildern (PNG, JPG, BMP)
+Ein- und Ausschalten des Inhaltsverzeichnisses
+Proportionale Skalierung von Bildern auf das A4-Format
+Automatische Erstellung eines interaktiven Inhaltsverzeichnisses mit Punkten
+Klickbare Links zu Seiten und seitliche Lesezeichen (Outline)
+Bequeme Änderung der Reihenfolge und Löschung ausgewählter Dateien
+
+
+IT
+
+Per avviare il programma, aprire il file con estensione bat
+
+Informazioni sul programma:
+
+Unione di documenti PDF e immagini (PNG, JPG, BMP)
+Attivazione e disattivazione dell’indice
+Ridimensionamento proporzionale delle immagini al formato A4
+Generazione automatica di un indice interattivo con punti
+Collegamenti cliccabili alle pagine e segnalibri laterali (outline)
+Facile modifica dell’ordine ed eliminazione dei file selezionati
+
+
+FR
+
+Pour lancer le programme, ouvrez le fichier avec l’extension bat
+
+À propos du programme :
+
+Fusion de documents PDF et d’images (PNG, JPG, BMP)
+Activation et désactivation de la table des matières
+Mise à l’échelle proportionnelle des images au format A4
+Génération automatique d’une table des matières interactive avec des points
+Liens cliquables vers les pages et signets latéraux (outline)
+Modification facile de l’ordre et suppression des fichiers sélectionnés
+
+
+PL
+
+Aby uruchomić program, otwórz plik z rozszerzeniem bat
+
+O programie:
+
+Łączenie dokumentów PDF i obrazów (PNG, JPG, BMP)
+Włączanie i wyłączanie spisu treści
+Proporcjonalne skalowanie obrazów do formatu A4
+Automatyczne generowanie interaktywnego spisu treści z kropkami
+Klikalne odnośniki do stron oraz zakładki boczne (outline)
+Wygodna zmiana kolejności i usuwanie wybranych plików
