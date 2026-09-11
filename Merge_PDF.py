@@ -78,17 +78,17 @@ def convert_images_to_pdf(image_files):
     return temp_pdfs
 
 
-def calculate_page_counts(pdf_files):
+def calculate_page_counts(pdf_items):
     """
     Возвращает список кортежей (имя_файла, количество_страниц).
     """
     file_info = []
-    for file in pdf_files:
+    for file, custom_name in pdf_items:
         try:
             reader = PdfReader(file)
             pages = len(reader.pages)
             if pages > 0:
-                file_info.append((os.path.basename(file), pages))
+                file_info.append((custom_name, pages))
         except Exception as e:
             print(f"Ошибка при чтении {file}: {e}")
     return file_info
@@ -153,11 +153,11 @@ def build_toc_pdf(entries, output_toc="toc.pdf", toc_title="Оглавление
     return link_rects
 
 
-def create_toc(pdf_files, output_toc="toc.pdf", toc_title="Оглавление"):
+def create_toc(pdf_items, output_toc="toc.pdf", toc_title="Оглавление"):
     """
     Создаёт оглавление с точным расчётом страниц и координатами кликабельных ссылок.
     """
-    file_info = calculate_page_counts(pdf_files)
+    file_info = calculate_page_counts(pdf_items)
 
     # Проход 1: предварительный рендеринг для определения числа страниц оглавления
     dummy_entries = [(title, 1, 0) for title, _ in file_info]
@@ -178,20 +178,20 @@ def create_toc(pdf_files, output_toc="toc.pdf", toc_title="Оглавление"
     return output_toc, entries, link_rects
 
 
-def merge_pdfs(pdf_files, output_filename="final_project.pdf", make_toc=True, cleanup_temp=True, toc_title="Оглавление"):
+def merge_pdfs(pdf_items, output_filename="final_project.pdf", make_toc=True, cleanup_temp=True, toc_title="Оглавление"):
     """
     Объединяет PDF и изображения в один файл.
     Если make_toc=True (по умолчанию), формирует страницу(ы) интерактивного оглавления с ссылками.
     Если make_toc=False, объединяет документы напрямую без добавления страницы оглавления.
     """
-    if not pdf_files:
+    if not pdf_items:
         raise ValueError("Нет PDF-файлов для объединения!")
 
     writer = PdfWriter()
 
     if make_toc:
         # 1. Создаём оглавление и получаем координаты кликабельных областей
-        toc_file, entries, link_rects = create_toc(pdf_files, toc_title=toc_title)
+        toc_file, entries, link_rects = create_toc(pdf_items, toc_title=toc_title)
 
         # 2. Добавляем страницы оглавления
         toc_reader = PdfReader(toc_file)
@@ -199,7 +199,7 @@ def merge_pdfs(pdf_files, output_filename="final_project.pdf", make_toc=True, cl
             writer.add_page(page)
 
         # 3. Добавляем страницы остальных документов
-        for pdf in pdf_files:
+        for pdf, _ in pdf_items:
             reader = PdfReader(pdf)
             for page in reader.pages:
                 writer.add_page(page)
@@ -221,12 +221,12 @@ def merge_pdfs(pdf_files, output_filename="final_project.pdf", make_toc=True, cl
     else:
         # Режим БЕЗ оглавления
         outline_page_index = 0
-        for pdf in pdf_files:
+        for pdf, custom_name in pdf_items:
             reader = PdfReader(pdf)
             num_pages = len(reader.pages)
             for page in reader.pages:
                 writer.add_page(page)
-            writer.add_outline_item(os.path.basename(pdf), outline_page_index)
+            writer.add_outline_item(custom_name, outline_page_index)
             outline_page_index += num_pages
 
     with open(output_filename, "wb") as out_f:
@@ -235,18 +235,23 @@ def merge_pdfs(pdf_files, output_filename="final_project.pdf", make_toc=True, cl
     print(f"Готово! Итоговый файл: {output_filename}")
 
 
-def process_files(files, output_name, make_toc=True, toc_title="Оглавление"):
+def process_files(files, custom_names, output_name, make_toc=True, toc_title="Оглавление"):
     """
     Вспомогательная функция обработки списка файлов и сохранения итогового PDF.
     """
     if not output_name.lower().endswith(".pdf"):
         output_name += ".pdf"
 
-    image_files = [f for f in files if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp"))]
-    pdf_files = [f for f in files if f.lower().endswith(".pdf")]
-
-    temp_pdfs = convert_images_to_pdf(image_files)
-    all_pdfs = pdf_files + temp_pdfs
+    all_pdfs = []
+    temp_pdfs = []
+    for f, custom_name in zip(files, custom_names):
+        if f.lower().endswith((".png", ".jpg", ".jpeg", ".bmp")):
+            converted = convert_images_to_pdf([f])
+            if converted:
+                all_pdfs.append((converted[0], custom_name))
+                temp_pdfs.append(converted[0])
+        elif f.lower().endswith(".pdf"):
+            all_pdfs.append((f, custom_name))
 
     try:
         merge_pdfs(all_pdfs, output_name, make_toc=make_toc, cleanup_temp=True, toc_title=toc_title)
@@ -271,7 +276,11 @@ TRANSLATIONS = {
         "btn_info": "ℹ️ Информация о приложении",
         "btn_merge": "🚀 Объединить файлы в PDF",
         "toc_checkbox": "Создавать интерактивное оглавление (по умолчанию включено)",
-        "listbox_header": "Выбранные файлы (порядок объединения):",
+        "listbox_header": "Выбранные файлы (двойной клик для переименования):",
+        "rename_title": "Переименовать",
+        "rename_prompt": "Введите новое имя для оглавления:",
+        "info_sec0": " 0. Скачать с GitHub ",
+        "info_github_btn": "Скачать актуальную версию",
         "file_dialog_title": "Выберите PDF файлы и изображения",
         "file_type_all": "Все поддерживаемые",
         "file_type_pdf": "PDF документы",
@@ -287,9 +296,7 @@ TRANSLATIONS = {
         "toc_title": "Оглавление",
         "info_title": "Информация о приложении",
         "info_header": "ℹ️ Информация о приложении",
-        "info_sec1": " 1. Написать разработчику ",
-        "info_contact": "Связаться в Telegram: ",
-        "info_sec2": " 2. Возможности ",
+        "info_sec2": " 1. Возможности ",
         "info_features": (
             "• Объединение PDF документов и картинок (PNG, JPG, BMP)\n"
             "• Включение и выключение оглавления\n"
@@ -311,7 +318,11 @@ TRANSLATIONS = {
         "btn_info": "ℹ️ Інформація про програму",
         "btn_merge": "🚀 Об'єднати файли в PDF",
         "toc_checkbox": "Створювати інтерактивний зміст (за замовчуванням увімкнено)",
-        "listbox_header": "Обрані файли (порядок об'єднання):",
+        "listbox_header": "Обрані файли (подвійний клік для перейменування):",
+        "rename_title": "Перейменувати",
+        "rename_prompt": "Введіть нове ім'я для змісту:",
+        "info_sec0": " 0. Завантажити з GitHub ",
+        "info_github_btn": "Завантажити актуальну версію",
         "file_dialog_title": "Оберіть PDF файли та зображення",
         "file_type_all": "Усі підтримувані",
         "file_type_pdf": "PDF документи",
@@ -327,9 +338,7 @@ TRANSLATIONS = {
         "toc_title": "Зміст",
         "info_title": "Інформація про програму",
         "info_header": "ℹ️ Інформація про програму",
-        "info_sec1": " 1. Написати розробнику ",
-        "info_contact": "Зв'язатися в Telegram: ",
-        "info_sec2": " 2. Можливості ",
+        "info_sec2": " 1. Можливості ",
         "info_features": (
             "• Об'єднання PDF документів та зображень (PNG, JPG, BMP)\n"
             "• Увімкнення та вимкнення змісту\n"
@@ -351,7 +360,11 @@ TRANSLATIONS = {
         "btn_info": "ℹ️ App-Informationen",
         "btn_merge": "🚀 Dateien zu PDF zusammenfügen",
         "toc_checkbox": "Interaktives Inhaltsverzeichnis erstellen (Standard: aktiv)",
-        "listbox_header": "Ausgewählte Dateien (Zusammenfügungsreihenfolge):",
+        "listbox_header": "Ausgewählte Dateien (Doppelklick zum Umbenennen):",
+        "rename_title": "Umbenennen",
+        "rename_prompt": "Neuen Namen für das Inhaltsverzeichnis eingeben:",
+        "info_sec0": " 0. Von GitHub herunterladen ",
+        "info_github_btn": "Aktuelle Version herunterladen",
         "file_dialog_title": "PDF-Dateien und Bilder auswählen",
         "file_type_all": "Alle unterstützten",
         "file_type_pdf": "PDF-Dokumente",
@@ -367,9 +380,7 @@ TRANSLATIONS = {
         "toc_title": "Inhaltsverzeichnis",
         "info_title": "App-Informationen",
         "info_header": "ℹ️ App-Informationen",
-        "info_sec1": " 1. Entwickler kontaktieren ",
-        "info_contact": "Kontakt über Telegram: ",
-        "info_sec2": " 2. Funktionen ",
+        "info_sec2": " 1. Funktionen ",
         "info_features": (
             "• Zusammenfügen von PDF-Dokumenten und Bildern (PNG, JPG, BMP)\n"
             "• Inhaltsverzeichnis ein- und ausschalten\n"
@@ -391,7 +402,11 @@ TRANSLATIONS = {
         "btn_info": "ℹ️ Informazioni sull'app",
         "btn_merge": "🚀 Unisci file in PDF",
         "toc_checkbox": "Crea sommario interattivo (attivo per impostazione predefinita)",
-        "listbox_header": "File selezionati (ordine di unione):",
+        "listbox_header": "File selezionati (doppio clic per rinominare):",
+        "rename_title": "Rinomina",
+        "rename_prompt": "Inserisci un nuovo nome per il sommario:",
+        "info_sec0": " 0. Scarica da GitHub ",
+        "info_github_btn": "Scarica l'ultima versione",
         "file_dialog_title": "Seleziona file PDF e immagini",
         "file_type_all": "Tutti i file supportati",
         "file_type_pdf": "Documenti PDF",
@@ -407,9 +422,7 @@ TRANSLATIONS = {
         "toc_title": "Sommario",
         "info_title": "Informazioni sull'app",
         "info_header": "ℹ️ Informazioni sull'app",
-        "info_sec1": " 1. Scrivi allo sviluppatore ",
-        "info_contact": "Contatta su Telegram: ",
-        "info_sec2": " 2. Funzionalità ",
+        "info_sec2": " 1. Funzionalità ",
         "info_features": (
             "• Unione di documenti PDF e immagini (PNG, JPG, BMP)\n"
             "• Attivazione e disattivazione del sommario\n"
@@ -431,7 +444,11 @@ TRANSLATIONS = {
         "btn_info": "ℹ️ Informations sur l'application",
         "btn_merge": "🚀 Fusionner les fichiers en PDF",
         "toc_checkbox": "Créer une table des matières interactive (activée par défaut)",
-        "listbox_header": "Fichiers sélectionnés (ordre de fusion) :",
+        "listbox_header": "Fichiers sélectionnés (double-cliquez pour renommer) :",
+        "rename_title": "Renommer",
+        "rename_prompt": "Entrez un nouveau nom pour la table des matières :",
+        "info_sec0": " 0. Télécharger depuis GitHub ",
+        "info_github_btn": "Télécharger la dernière version",
         "file_dialog_title": "Sélectionner des fichiers PDF et des images",
         "file_type_all": "Tous les fichiers pris en charge",
         "file_type_pdf": "Documents PDF",
@@ -447,9 +464,7 @@ TRANSLATIONS = {
         "toc_title": "Table des matières",
         "info_title": "Informations sur l'application",
         "info_header": "ℹ️ Informations sur l'application",
-        "info_sec1": " 1. Écrire au développeur ",
-        "info_contact": "Contacter sur Telegram : ",
-        "info_sec2": " 2. Fonctionnalités ",
+        "info_sec2": " 1. Fonctionnalités ",
         "info_features": (
             "• Fusion de documents PDF et d'images (PNG, JPG, BMP)\n"
             "• Activation et désactivation de la table des matières\n"
@@ -471,7 +486,11 @@ TRANSLATIONS = {
         "btn_info": "ℹ️ Informacje o aplikacji",
         "btn_merge": "🚀 Połącz pliki w PDF",
         "toc_checkbox": "Twórz interaktywny spis treści (domyślnie włączone)",
-        "listbox_header": "Wybrane pliki (kolejność łączenia):",
+        "listbox_header": "Wybrane pliki (kliknij dwukrotnie, aby zmienić nazwę):",
+        "rename_title": "Zmień nazwę",
+        "rename_prompt": "Wprowadź nową nazwę dla spisu treści:",
+        "info_sec0": " 0. Pobierz z GitHub ",
+        "info_github_btn": "Pobierz najnowszą wersję",
         "file_dialog_title": "Wybierz pliki PDF i obrazy",
         "file_type_all": "Wszystkie obsługiwane",
         "file_type_pdf": "Dokumenty PDF",
@@ -487,9 +506,7 @@ TRANSLATIONS = {
         "toc_title": "Spis treści",
         "info_title": "Informacje o aplikacji",
         "info_header": "ℹ️ Informacje o aplikacji",
-        "info_sec1": " 1. Napisz do twórcy ",
-        "info_contact": "Skontaktuj się na Telegramie: ",
-        "info_sec2": " 2. Możliwości ",
+        "info_sec2": " 1. Możliwości ",
         "info_features": (
             "• Łączenie dokumentów PDF i obrazów (PNG, JPG, BMP)\n"
             "• Włączanie i wyłączanie spisu treści\n"
@@ -520,12 +537,14 @@ def run_gui():
     root.minsize(680, 500)
 
     selected_files = []
+    custom_names = []
     toc_var = tk.BooleanVar(value=True)  # По умолчанию включено
+    last_saved_file = None
 
     def update_listbox():
         listbox.delete(0, tk.END)
-        for idx, f in enumerate(selected_files, start=1):
-            listbox.insert(tk.END, f"{idx}. {os.path.basename(f)}")
+        for idx, name in enumerate(custom_names, start=1):
+            listbox.insert(tk.END, f"{idx}. {name}")
 
     def add_files():
         t = TRANSLATIONS[current_lang]
@@ -537,6 +556,7 @@ def run_gui():
         )
         if files:
             selected_files.extend(files)
+            custom_names.extend([os.path.basename(f) for f in files])
             update_listbox()
 
     def move_up():
@@ -544,6 +564,7 @@ def run_gui():
         if sel and sel[0] > 0:
             idx = sel[0]
             selected_files[idx], selected_files[idx - 1] = selected_files[idx - 1], selected_files[idx]
+            custom_names[idx], custom_names[idx - 1] = custom_names[idx - 1], custom_names[idx]
             update_listbox()
             listbox.selection_set(idx - 1)
 
@@ -552,6 +573,7 @@ def run_gui():
         if sel and sel[0] < len(selected_files) - 1:
             idx = sel[0]
             selected_files[idx], selected_files[idx + 1] = selected_files[idx + 1], selected_files[idx]
+            custom_names[idx], custom_names[idx + 1] = custom_names[idx + 1], custom_names[idx]
             update_listbox()
             listbox.selection_set(idx + 1)
 
@@ -560,13 +582,16 @@ def run_gui():
         if sel:
             idx = sel[0]
             selected_files.pop(idx)
+            custom_names.pop(idx)
             update_listbox()
 
     def clear_all():
         selected_files.clear()
+        custom_names.clear()
         update_listbox()
 
     def merge():
+        nonlocal last_saved_file
         t = TRANSLATIONS[current_lang]
         if not selected_files:
             messagebox.showwarning(t["warn_title"], t["warn_no_files"])
@@ -582,20 +607,21 @@ def run_gui():
 
         try:
             should_make_toc = toc_var.get()
-            process_files(selected_files, save_path, make_toc=should_make_toc, toc_title=t["toc_title"])
+            process_files(selected_files, custom_names, save_path, make_toc=should_make_toc, toc_title=t["toc_title"])
             msg = t["success_toc"] if should_make_toc else t["success_no_toc"]
             messagebox.showinfo(t["success_title"], f"{msg}\n{save_path}")
+            last_saved_file = save_path
         except Exception as e:
             messagebox.showerror(t["error_title"], f"{t['error_merge']}{e}")
 
-    def open_dev_link(event=None):
-        webbrowser.open_new_tab("https://t.me/ExpertMebeli")
+    def open_github_link(event=None):
+        webbrowser.open_new_tab("https://github.com/OlderMenshikov/Union_Files_in_PDF")
 
     def show_info_window():
         t = TRANSLATIONS[current_lang]
         info_win = tk.Toplevel(root)
         info_win.title(t["info_title"])
-        info_win.geometry("540x420")
+        info_win.geometry("540x480")
         info_win.resizable(False, False)
         info_win.transient(root)
         info_win.grab_set()
@@ -611,18 +637,14 @@ def run_gui():
         main_frame = tk.Frame(info_win, padx=15, pady=5)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Раздел 1: Написать разработчику
-        dev_frame = tk.LabelFrame(main_frame, text=t["info_sec1"], font=("Arial", 10, "bold"), fg="#2E7D32", padx=10, pady=8)
-        dev_frame.pack(fill=tk.X, pady=(0, 10))
+        # Раздел 0: Скачать с GitHub
+        github_frame = tk.LabelFrame(main_frame, text=t.get("info_sec0", " 0. Скачать с GitHub "), font=("Arial", 10, "bold"), fg="#D32F2F", padx=10, pady=8)
+        github_frame.pack(fill=tk.X, pady=(0, 10))
 
-        dev_lbl = tk.Label(dev_frame, text=t["info_contact"], font=("Arial", 9, "bold"))
-        dev_lbl.pack(side=tk.LEFT)
+        github_btn = tk.Button(github_frame, text=t.get("info_github_btn", "Скачать актуальную версию"), command=open_github_link, font=("Arial", 9, "bold"), bg="#FFCDD2", fg="#B71C1C", cursor="hand2", relief=tk.RAISED, padx=10)
+        github_btn.pack(side=tk.LEFT)
 
-        dev_link = tk.Label(dev_frame, text="t.me/ExpertMebeli", font=("Arial", 9, "underline", "bold"), fg="#1E88E5", cursor="hand2")
-        dev_link.pack(side=tk.LEFT)
-        dev_link.bind("<Button-1>", open_dev_link)
-
-        # Раздел 2: Возможности
+        # Раздел 1: Возможности
         features_frame = tk.LabelFrame(main_frame, text=t["info_sec2"], font=("Arial", 10, "bold"), fg="#1565C0", padx=10, pady=8)
         features_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -725,6 +747,25 @@ def run_gui():
     listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.config(command=listbox.yview)
 
+    def on_double_click(event):
+        sel = listbox.curselection()
+        if sel:
+            idx = sel[0]
+            old_name = custom_names[idx]
+            from tkinter import simpledialog
+            t = TRANSLATIONS[current_lang]
+            new_name = simpledialog.askstring(
+                t.get("rename_title", "Переименовать"),
+                t.get("rename_prompt", "Введите новое имя:"),
+                initialvalue=old_name,
+                parent=root
+            )
+            if new_name and new_name.strip():
+                custom_names[idx] = new_name.strip()
+                update_listbox()
+
+    listbox.bind("<Double-1>", on_double_click)
+
     # Чекбокс оглавления
     options_frame = tk.Frame(root)
     options_frame.pack(fill=tk.X, padx=10, pady=5)
@@ -741,6 +782,16 @@ def run_gui():
     btn_merge = tk.Button(root, text=t_init["btn_merge"], command=merge, bg="#2196F3", fg="white", font=("Arial", 12, "bold"), height=2)
     btn_merge.pack(fill=tk.X, padx=10, pady=10)
 
+    def on_closing():
+        if last_saved_file and os.path.exists(last_saved_file):
+            try:
+                import webbrowser
+                webbrowser.open(last_saved_file)
+            except Exception:
+                pass
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
     root.mainloop()
 
 
@@ -750,6 +801,7 @@ def main():
         return
 
     files = sys.argv[1:]
+    custom_names = [os.path.basename(f) for f in files]
 
     output_name = input("Введите имя итогового файла (без расширения): ").strip()
     if not output_name:
@@ -760,7 +812,7 @@ def main():
     if ans in ("н", "n", "нет", "no"):
         make_toc = False
 
-    process_files(files, output_name, make_toc=make_toc)
+    process_files(files, custom_names, output_name, make_toc=make_toc)
 
 
 if __name__ == "__main__":
